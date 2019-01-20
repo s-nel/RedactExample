@@ -30,9 +30,6 @@ object Example {
     // Define custom redactables for sensitive container models
     implicit val sensitiveRedactable: Redactable[Sensitive] =
       Redactable.instance(_ => Redacted)
-    new Redactable[Sensitive] {
-      override def redact(s: Sensitive): Sensitive = Redacted
-    }
 
     // Instance for HNil case
     implicit val hnilRedactable: Redactable[HNil] = Redactable.clearText[HNil]
