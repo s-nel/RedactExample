@@ -84,7 +84,7 @@ object Example3 {
                                |  }
                                |}
                              """.stripMargin)
-        println(expected)
+        println(response.asJson)
         assert(response.asJson == expected.right.get)
       } else {
         val expected = parse("""
@@ -97,7 +97,7 @@ object Example3 {
                                |  }
                                |}
                              """.stripMargin)
-        println(expected)
+        println(response.asJson)
         assert(response.asJson == expected.right.get)
       }
     }
