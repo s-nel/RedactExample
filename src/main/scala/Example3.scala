@@ -13,6 +13,8 @@ object Example3 {
   object Sensitive {
     import io.circe.Encoder
 
+    // Here we have "contextual encoding". The encoder makes decisions based on the `SerdesContext`, but we don't have
+    // to have the context in scope until the encoder is actually used
     implicit def sensitiveEncoder[A, B](
         implicit aEncoder: Encoder[A],
         bEncoder: Encoder[B],
@@ -68,7 +70,8 @@ object Example3 {
                             Nested("clear", Sensitive("secret", "redacted")))
 
     List(true, false).foreach { redact =>
-      // Lazy allows us to provide the context here
+      // Here we finally provide the context for encoding. Lazy allows everything to wire up correctly. If we don't
+      // define the context, compilation will fail
       implicit val serdesContext: SerdesContext = SerdesContext(redact)
       if (redact) {
         val expected = parse("""
