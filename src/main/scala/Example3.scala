@@ -13,8 +13,11 @@ object Example3 {
   object Sensitive {
     import io.circe.Encoder
 
-    implicit def sensitiveEncoder[A, B](implicit aEncoder: Encoder[A], bEncoder: Encoder[B], serdesContext: Lazy[SerdesContext]): Encoder[Sensitive[A, B]] = {
-      if(serdesContext.value.redact) {
+    implicit def sensitiveEncoder[A, B](
+        implicit aEncoder: Encoder[A],
+        bEncoder: Encoder[B],
+        serdesContext: Lazy[SerdesContext]): Encoder[Sensitive[A, B]] = {
+      if (serdesContext.value.redact) {
         Encoder.instance[Sensitive[A, B]](s => bEncoder(s.redacted))
       } else {
         Encoder.instance[Sensitive[A, B]](s => aEncoder(s.value))
@@ -24,26 +27,32 @@ object Example3 {
 
   // Example response model ADT that will need redacting
   final case class Nested(
-    someOtherCleartextVal: String,
-    someOtherSensitive: Sensitive[String, String]
+      someOtherCleartextVal: String,
+      someOtherSensitive: Sensitive[String, String]
   )
   object Nested {
     import io.circe.generic.semiauto._
     // For any fields in `Nested` that have contextual encoding, we must provide the encoder lazily
-    implicit def nestedEncoder(implicit a: Lazy[Encoder[Sensitive[String, String]]]): Encoder[Nested] = {
-      implicit val sensitiveEncoder: Encoder[Sensitive[String, String]] = a.value
+    implicit def nestedEncoder(
+        implicit a: Lazy[Encoder[Sensitive[String, String]]])
+      : Encoder[Nested] = {
+      implicit val sensitiveEncoder: Encoder[Sensitive[String, String]] =
+        a.value
       deriveEncoder[Nested]
     }
   }
   final case class Response(
-    someCleartextVal: String,
-    someSensitive: Sensitive[String, String],
-    nested: Nested
+      someCleartextVal: String,
+      someSensitive: Sensitive[String, String],
+      nested: Nested
   )
   object Response {
     import io.circe.generic.semiauto._
-    implicit def responseEncoder(implicit a: Lazy[Encoder[Sensitive[String, String]]]): Encoder[Response] = {
-      implicit val sensitiveEncoder: Encoder[Sensitive[String, String]] = a.value
+    implicit def responseEncoder(
+        implicit a: Lazy[Encoder[Sensitive[String, String]]])
+      : Encoder[Response] = {
+      implicit val sensitiveEncoder: Encoder[Sensitive[String, String]] =
+        a.value
       deriveEncoder[Response]
     }
   }
@@ -55,8 +64,8 @@ object Example3 {
     import io.circe.syntax._
 
     val response = Response("clear",
-      Sensitive("secret", "******"),
-      Nested("clear", Sensitive("secret", "redacted")))
+                            Sensitive("secret", "******"),
+                            Nested("clear", Sensitive("secret", "redacted")))
 
     List(true, false).foreach { redact =>
       // Lazy allows us to provide the context here
