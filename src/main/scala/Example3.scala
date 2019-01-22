@@ -26,34 +26,17 @@ object Example3 {
   }
 
   // Example response model ADT that will need redacting
-  final case class Nested(
-      someOtherCleartextVal: String,
-      someOtherSensitive: Sensitive[String, String]
-  )
-  object Nested {
-    import io.circe.Encoder
-    import io.circe.generic.semiauto._
-    import shapeless.Lazy
-
-    // For any fields in `Nested` that have contextual encoding, we must provide the encoder lazily
-    implicit def nestedEncoder(
-        implicit a: Lazy[Encoder[Sensitive[String, String]]])
-      : Encoder[Nested] = {
-      implicit val sensitiveEncoder: Encoder[Sensitive[String, String]] =
-        a.value
-      deriveEncoder[Nested]
-    }
-  }
   final case class Response(
       someCleartextVal: String,
-      someSensitive: Sensitive[String, String],
-      nested: Nested
+      someSensitive: Sensitive[String, String]
   )
   object Response {
     import io.circe.Encoder
     import io.circe.generic.semiauto._
     import shapeless.Lazy
 
+    // Our Response encoder. It's a bit more verbose here, but I don't think it's that bad. Will only need to do this
+    // when one of children uses contextual encoding
     implicit def responseEncoder(
         implicit a: Lazy[Encoder[Sensitive[String, String]]])
       : Encoder[Response] = {
@@ -65,13 +48,10 @@ object Example3 {
 
   // Example usage of redaction using semi-auto derivation and Lazy
   def main(args: Array[String]): Unit = {
-
     import io.circe.parser._
     import io.circe.syntax._
 
-    val response = Response("clear",
-                            Sensitive("secret", "******"),
-                            Nested("clear", Sensitive("secret", "redacted")))
+    val response = Response("clear", Sensitive("secret", "******"))
 
     List(true, false).foreach { redact =>
       // Here we finally provide the context for encoding. Lazy allows everything to wire up correctly. If we don't
@@ -81,11 +61,7 @@ object Example3 {
         val expected = parse("""
                                |{
                                |  "someCleartextVal" : "clear",
-                               |  "someSensitive" : "******",
-                               |  "nested" : {
-                               |    "someOtherCleartextVal" : "clear",
-                               |    "someOtherSensitive" : "redacted"
-                               |  }
+                               |  "someSensitive" : "******"
                                |}
                              """.stripMargin)
         println(response.asJson)
@@ -94,11 +70,7 @@ object Example3 {
         val expected = parse("""
                                |{
                                |  "someCleartextVal" : "clear",
-                               |  "someSensitive" : "secret",
-                               |  "nested" : {
-                               |    "someOtherCleartextVal" : "clear",
-                               |    "someOtherSensitive" : "secret"
-                               |  }
+                               |  "someSensitive" : "secret"
                                |}
                              """.stripMargin)
         println(response.asJson)
