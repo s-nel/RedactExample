@@ -1,6 +1,3 @@
-import io.circe.Encoder
-import shapeless.Lazy
-
 /**
   * Example3 shows that semi-auto derivation is possible using a context object that is defined where the encoder is used
   */
@@ -12,6 +9,7 @@ object Example3 {
   final case class Sensitive[T, RedactedT](value: T, redacted: RedactedT)
   object Sensitive {
     import io.circe.Encoder
+    import shapeless.Lazy
 
     // Here we have "contextual encoding". The encoder makes decisions based on the `SerdesContext`, but we don't have
     // to have the context in scope until the encoder is actually used
@@ -33,7 +31,10 @@ object Example3 {
       someOtherSensitive: Sensitive[String, String]
   )
   object Nested {
+    import io.circe.Encoder
     import io.circe.generic.semiauto._
+    import shapeless.Lazy
+
     // For any fields in `Nested` that have contextual encoding, we must provide the encoder lazily
     implicit def nestedEncoder(
         implicit a: Lazy[Encoder[Sensitive[String, String]]])
@@ -49,7 +50,10 @@ object Example3 {
       nested: Nested
   )
   object Response {
+    import io.circe.Encoder
     import io.circe.generic.semiauto._
+    import shapeless.Lazy
+
     implicit def responseEncoder(
         implicit a: Lazy[Encoder[Sensitive[String, String]]])
       : Encoder[Response] = {
